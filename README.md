@@ -1,4 +1,5 @@
-# Flooring Liquidators Prefab Countertop Scraper
+# Scraper
+* note for educational purpose only
 
 Scrapes product data and live inventory from:
 

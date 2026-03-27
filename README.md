@@ -58,13 +58,13 @@ Use these formulas in your shared sheet:
 - `B1`:
 
 ```gs
-=INDEX(IMPORTDATA("https://raw.githubusercontent.com/<user>/<repo>/main/output/last_updated_ist.txt"),1,1)
+=INDEX(IMPORTDATA("https://raw.githubusercontent.com/<user>/<repo>/<branch>/output/last_updated_ist.txt"),1,1)
 ```
 
 - `A3`:
 
 ```gs
-=IMPORTDATA("https://raw.githubusercontent.com/<user>/<repo>/main/output/products.csv")
+=IMPORTDATA("https://raw.githubusercontent.com/<user>/<repo>/<branch>/output/products.csv")
 ```
 
 Replace `<user>` and `<repo>` with your GitHub repository path.

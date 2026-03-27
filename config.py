@@ -5,6 +5,7 @@ CATEGORY_URLS = [
     "https://flooringliquidators.net/countertops/prefab-countertops/granite",
     "https://flooringliquidators.net/countertops/prefab-countertops/marble",
     "https://flooringliquidators.net/countertops/prefab-countertops/quartzite",
+    "https://flooringliquidators.net/countertops/prefab-countertops/engineered-granite",
 ]
 
 INVENTORY_API_BASE = "https://products.mm-api.agency/fliq/inventory"

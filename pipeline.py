@@ -41,19 +41,19 @@ def attach_inventory(client: HttpClient, records: list[ProductRecord]) -> list[P
 
 
 def deduplicate(records: Iterable[ProductRecord]) -> list[ProductRecord]:
-    by_product_id: dict[str, ProductRecord] = {}
+    by_product_url: dict[str, ProductRecord] = {}
 
     for record in records:
-        existing = by_product_id.get(record.product_id)
+        existing = by_product_url.get(record.product_url)
         if not existing:
-            by_product_id[record.product_id] = record
+            by_product_url[record.product_url] = record
             continue
 
-        # Prefer the more complete row (fewer null fields).
+        # Prefer the more complete row (fewer null fields) for exact URL collisions.
         if _completeness(record) > _completeness(existing):
-            by_product_id[record.product_id] = record
+            by_product_url[record.product_url] = record
 
-    deduped = sorted(by_product_id.values(), key=lambda r: (r.product_name.lower(), r.product_id))
+    deduped = sorted(by_product_url.values(), key=lambda r: (r.product_name.lower(), r.product_id))
     return deduped
 
 

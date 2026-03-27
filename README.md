@@ -20,6 +20,8 @@ CSV columns:
 
 `inventory` is pulled from the live endpoint used by **Check Live Inventory**.
 
+Deduplication is URL-based (`product_url`), not `product_id`-based.
+
 ## Setup
 
 ```bash

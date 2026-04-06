@@ -42,16 +42,16 @@ Optional:
 python main.py --verbose
 ```
 
-## Weekly Automation (GitHub Actions)
+## Daily Automation (GitHub Actions)
 
 This repo includes a workflow at `.github/workflows/weekly_scraper.yml` that:
 
-- Runs every Monday at **09:00 IST** (`30 3 * * 1` UTC)
+- Runs every day at **10:00 IST** (`30 4 * * *` UTC)
 - Can also be triggered manually from GitHub Actions UI
 - Regenerates `output/products.csv`
 - Writes `output/last_updated_ist.txt` as `YYYY-MM-DD HH:mm:ss IST`
-- Saves weekly snapshots to `output/archive/products_YYYY-MM-DD.csv`
-- Keeps only the latest **13** snapshots (one quarter)
+- Saves snapshots to `output/archive/products_YYYY-MM-DD.csv` only on Mondays in IST
+- Keeps only the latest **13** Monday snapshots (about one quarter)
 
 ### Google Sheet Formulas
 

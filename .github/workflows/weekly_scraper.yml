@@ -1,9 +1,9 @@
-name: Weekly Scraper Update
+name: Daily Scraper Update
 
 on:
   schedule:
-    # 09:00 IST every Monday (03:30 UTC)
-    - cron: "30 3 * * 1"
+    # 10:00 IST every day (04:30 UTC)
+    - cron: "30 4 * * *"
   workflow_dispatch:
 
 permissions:
@@ -38,13 +38,18 @@ jobs:
           mkdir -p output
           TZ=Asia/Kolkata date +"%Y-%m-%d %H:%M:%S IST" > output/last_updated_ist.txt
 
-      - name: Create weekly archive snapshot
+      - name: Create Monday archive snapshot
         run: |
-          mkdir -p output/archive
-          SNAPSHOT_DATE="$(TZ=Asia/Kolkata date +%F)"
-          cp output/products.csv "output/archive/products_${SNAPSHOT_DATE}.csv"
+          IST_WEEKDAY="$(TZ=Asia/Kolkata date +%u)"
+          if [ "$IST_WEEKDAY" -eq 1 ]; then
+            mkdir -p output/archive
+            SNAPSHOT_DATE="$(TZ=Asia/Kolkata date +%F)"
+            cp output/products.csv "output/archive/products_${SNAPSHOT_DATE}.csv"
+          else
+            echo "Skipping archive creation because today is not Monday in IST."
+          fi
 
-      - name: Prune archive to 13 snapshots
+      - name: Prune archive to 13 Monday snapshots
         run: |
           ls -1t output/archive/products_*.csv 2>/dev/null | tail -n +14 | xargs -r rm -f
 
@@ -57,5 +62,5 @@ jobs:
             echo "No data changes to commit."
             exit 0
           fi
-          git commit -m "chore: weekly scraper data update"
+          git commit -m "chore: daily scraper data update"
           git push origin HEAD:${{ github.event.repository.default_branch }}

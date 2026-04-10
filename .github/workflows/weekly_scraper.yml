@@ -2,8 +2,9 @@ name: Daily Scraper Update
 
 on:
   schedule:
-    # 10:00 IST every day (04:30 UTC)
-    - cron: "30 4 * * *"
+    # 09:57 IST every day
+    - cron: "57 9 * * *"
+      timezone: "Asia/Kolkata"
   workflow_dispatch:
 
 permissions:

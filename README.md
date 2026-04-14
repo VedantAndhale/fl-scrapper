@@ -99,40 +99,27 @@ Each run:
 1. Scrapes the latest inventory into `output/products.csv`
 2. Writes `output/last_updated_ist.txt`
 3. Builds weekly history files with `python weekly_history.py`
-4. Pushes the CSV outputs to Google Sheets with `python google_sheets_sync.py`
-5. Commits generated repo artifacts back to the default branch when data changed
+4. Commits generated repo artifacts back to the default branch when data changed
 
-## Google Sheets Setup
+## Google Sheets With Apps Script
 
-This repo pushes data to one Google spreadsheet with four tabs:
+This repo does not push directly to Google Sheets anymore.
+
+The current setup is:
+
+- GitHub Actions generates CSV files in the repo
+- Google Apps Script pulls those CSV files from GitHub raw URLs
+- Apps Script updates one spreadsheet with four tabs
 
 - `Current Inventory`
 - `Weekly History Long`
 - `Weekly History Wide`
 - `Snapshot Status`
 
-### 1. Create a Google Cloud project
-
-1. Open Google Cloud Console
-2. Create a new project or pick an existing one
-3. Go to `APIs & Services -> Library`
-4. Enable `Google Sheets API`
-5. Go to `IAM & Admin -> Service Accounts`
-6. Click `Create Service Account`
-7. Give it any name, then finish creation
-8. Open that service account
-9. Go to the `Keys` tab
-10. Click `Add Key -> Create new key -> JSON`
-11. Download the JSON file
-
-The full contents of that downloaded JSON file are what you put into the GitHub secret `GOOGLE_SERVICE_ACCOUNT_JSON`.
-
-### 2. Create the target spreadsheet
+### 1. Create the target spreadsheet
 
 - Open Google Sheets
 - Create a spreadsheet for the team
-- Share the spreadsheet with the service account email from the JSON key
-  - give it Editor access
 
 How to get the spreadsheet ID:
 
@@ -144,21 +131,35 @@ https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit#gid=0
 ```
 
 - copy the part between `/d/` and `/edit`
-- that value goes into the GitHub secret `GOOGLE_SHEETS_SPREADSHEET_ID`
+- that value goes into the Apps Script constant `SPREADSHEET_ID`
 
-### 3. Add GitHub repository secrets
+### 2. Add Apps Script
 
-Add these Actions secrets in the GitHub repository:
+- Open `Extensions -> Apps Script` from the spreadsheet
+- Add an Apps Script project bound to that spreadsheet
+- Use the script to fetch these files from GitHub:
+  - `output/products.csv`
+  - `output/weekly_inventory_long.csv`
+  - `output/weekly_inventory_wide.csv`
+  - `output/weekly_snapshot_status.csv`
+  - `output/last_updated_ist.txt`
+- Create these sheet tabs:
+  - `Current Inventory`
+  - `Weekly History Long`
+  - `Weekly History Wide`
+  - `Snapshot Status`
 
-- `GOOGLE_SHEETS_SPREADSHEET_ID`
-  - the spreadsheet id from the Google Sheets URL
-- `GOOGLE_SERVICE_ACCOUNT_JSON`
-  - the full JSON key content for the service account
+Use `raw.githubusercontent.com` URLs, not the GitHub API, if you want to avoid PAT/service-account setup.
 
-The workflow will fail with a clear error if either secret is missing.
+### 3. Add an Apps Script Trigger
+
+- In Apps Script, add a time-driven trigger for your update function
+- Recommended interval: every hour
+- The script should compare `last_updated_ist.txt` against the last imported timestamp before rewriting tabs
 
 ## Notes
 
-- The Google Sheets sync overwrites each target tab on every run
-- The first row in each tab is always the CSV header row
+- The repo only generates and archives CSV files
+- Google Sheets is updated by Apps Script, not by GitHub Actions
 - Weekly history tracks inventory only; price history is not stored in the weekly outputs
+- The first row in each sheet tab should remain the CSV header row

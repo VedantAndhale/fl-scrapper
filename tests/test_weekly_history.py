@@ -105,6 +105,38 @@ class WeeklyHistoryTests(unittest.TestCase):
                 ],
             )
 
+    def test_tuesday_replaces_existing_bad_monday_snapshot_without_pending_state(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output_dir = Path(tmp) / "output"
+            archive_dir = output_dir / "archive"
+            archive_dir.mkdir(parents=True)
+
+            write_products_csv(
+                archive_dir / "products_2026-04-13.csv",
+                [["A1", "Alpha", "10.0", "0", "quartz"]],
+            )
+            write_products_csv(
+                output_dir / "products.csv",
+                [["A1", "Alpha", "10.0", "9", "quartz"]],
+            )
+
+            process_weekly_history(output_dir, date(2026, 4, 14))
+
+            snapshot_rows = read_csv_rows(archive_dir / "products_2026-04-13.csv")
+            self.assertEqual(snapshot_rows[0]["inventory"], "9")
+            self.assertEqual(
+                read_csv_rows(output_dir / "weekly_snapshot_status.csv"),
+                [
+                    {
+                        "week_date": "2026-04-13",
+                        "source_date": "2026-04-14",
+                        "status": "captured_from_tuesday",
+                        "fallback_used": "true",
+                        "row_count": "1",
+                    }
+                ],
+            )
+
     def test_tuesday_all_zero_after_bad_monday_marks_week_skipped(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output_dir = Path(tmp) / "output"
@@ -117,6 +149,37 @@ class WeeklyHistoryTests(unittest.TestCase):
 
             self.assertFalse((output_dir / "archive" / "products_2026-04-13.csv").exists())
             self.assertFalse((output_dir / "state" / "pending_weekly_snapshot.json").exists())
+            self.assertEqual(
+                read_csv_rows(output_dir / "weekly_snapshot_status.csv"),
+                [
+                    {
+                        "week_date": "2026-04-13",
+                        "source_date": "",
+                        "status": "skipped_zero_on_monday_and_tuesday",
+                        "fallback_used": "true",
+                        "row_count": "1",
+                    }
+                ],
+            )
+
+    def test_tuesday_removes_existing_bad_monday_snapshot_when_tuesday_is_also_zero(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output_dir = Path(tmp) / "output"
+            archive_dir = output_dir / "archive"
+            archive_dir.mkdir(parents=True)
+
+            write_products_csv(
+                archive_dir / "products_2026-04-13.csv",
+                [["A1", "Alpha", "10.0", "0", "quartz"]],
+            )
+            write_products_csv(
+                output_dir / "products.csv",
+                [["A1", "Alpha", "10.0", "0", "quartz"]],
+            )
+
+            process_weekly_history(output_dir, date(2026, 4, 14))
+
+            self.assertFalse((archive_dir / "products_2026-04-13.csv").exists())
             self.assertEqual(
                 read_csv_rows(output_dir / "weekly_snapshot_status.csv"),
                 [

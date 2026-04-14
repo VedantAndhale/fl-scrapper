@@ -116,7 +116,9 @@ def maybe_capture_weekly_snapshot(
 
     if today.weekday() == 0:
         week_date = today
+        existing_snapshot_path = snapshot_path_for_week(archive_dir, week_date)
         if zero_inventory:
+            existing_snapshot_path.unlink(missing_ok=True)
             save_pending_snapshot(
                 pending_state_path,
                 PendingSnapshot(week_date=week_date, created_on=today),
@@ -159,6 +161,33 @@ def maybe_capture_weekly_snapshot(
         )
         clear_pending_snapshot(pending_state_path)
         return None, status_rows
+
+    if today.weekday() == 1:
+        monday_week_date = today - timedelta(days=1)
+        monday_snapshot_path = snapshot_path_for_week(archive_dir, monday_week_date)
+        if monday_snapshot_path.exists() and csv_path_has_all_zero_inventory(monday_snapshot_path):
+            if zero_inventory:
+                monday_snapshot_path.unlink(missing_ok=True)
+                status_rows = upsert_status_row(
+                    status_rows,
+                    week_date=monday_week_date,
+                    source_date=None,
+                    status="skipped_zero_on_monday_and_tuesday",
+                    fallback_used=True,
+                    row_count=row_count,
+                )
+                return None, status_rows
+
+            write_snapshot_csv(monday_snapshot_path, daily_table)
+            status_rows = upsert_status_row(
+                status_rows,
+                week_date=monday_week_date,
+                source_date=today,
+                status="captured_from_tuesday",
+                fallback_used=True,
+                row_count=row_count,
+            )
+            return None, status_rows
 
     return pending, status_rows
 
@@ -412,6 +441,10 @@ def read_csv_table(path: Path) -> CsvTable:
 
 def write_snapshot_csv(path: Path, table: CsvTable) -> None:
     write_csv_rows(path, table.fieldnames, table.rows)
+
+
+def csv_path_has_all_zero_inventory(path: Path) -> bool:
+    return all_zero_inventory(read_csv_table(path).rows)
 
 
 def write_status_rows(path: Path, rows: list[dict[str, str]]) -> None:

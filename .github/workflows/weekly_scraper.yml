@@ -2,9 +2,8 @@ name: Daily Scraper Update
 
 on:
   schedule:
-    # 09:57 IST every day
+    # 15:27 IST every day
     - cron: "57 9 * * *"
-      timezone: "Asia/Kolkata"
   workflow_dispatch:
 
 permissions:
@@ -39,26 +38,22 @@ jobs:
           mkdir -p output
           TZ=Asia/Kolkata date +"%Y-%m-%d %H:%M:%S IST" > output/last_updated_ist.txt
 
-      - name: Create Monday archive snapshot
+      - name: Build weekly inventory history
         run: |
-          IST_WEEKDAY="$(TZ=Asia/Kolkata date +%u)"
-          if [ "$IST_WEEKDAY" -eq 1 ]; then
-            mkdir -p output/archive
-            SNAPSHOT_DATE="$(TZ=Asia/Kolkata date +%F)"
-            cp output/products.csv "output/archive/products_${SNAPSHOT_DATE}.csv"
-          else
-            echo "Skipping archive creation because today is not Monday in IST."
-          fi
+          python weekly_history.py
 
-      - name: Prune archive to 13 Monday snapshots
+      - name: Sync Google Sheets
+        env:
+          GOOGLE_SHEETS_SPREADSHEET_ID: ${{ secrets.GOOGLE_SHEETS_SPREADSHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: |
-          ls -1t output/archive/products_*.csv 2>/dev/null | tail -n +14 | xargs -r rm -f
+          python google_sheets_sync.py
 
       - name: Commit and push updates
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add output/products.csv output/last_updated_ist.txt output/archive/
+          git add output/
           if git diff --cached --quiet; then
             echo "No data changes to commit."
             exit 0
